@@ -8,11 +8,20 @@
     "wikitext",
     "wikipedia",
     "coordinates",
-	 "geo"
+    "geo"
   ],
   "author": "yetzt <node@yetzt.me>",
   "license": "Unlicense",
   "dependencies": {
     "debug": "^3.1.0"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yetzt/node-wco.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yetzt/node-wco/issues"
+  },
+  "homepage": "https://github.com/yetzt/node-wco#readme"
 }
