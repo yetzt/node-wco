@@ -1,19 +1,22 @@
 var debug = require("debug")("wco");
 
-function wco(content, strict){
-	return (this instanceof wco) ? this.parse(content, strict) : new wco(content, strict);
+function wco(content, strict, title){
+	return (this instanceof wco) ? this.parse(content, strict, title) : new wco(content, strict, title);
 };
 
-wco.prototype.parse = function(content, strict) {
+// parse wikitext
+wco.prototype.parse = function(content, strict, title) {
 	var self = this;
 	
 	self.strict = !!strict;
+	self.title = title || "-";
 	
 	var templates = this.templates(content);
-	
+
 	var coordinates = templates.filter(function(template){
+		if (!template) debug("<parse problem> [%s]", self.title);
 		// filter coordinate templates
-		return (["coordinate","coord"].indexOf(template.name) >= 0)
+		return (!!template && ["coordinate","coord"].indexOf(template.name) >= 0)
 	}).map(function(template){
 		return self.coord(template);
 	}).filter(function(coord){
@@ -24,6 +27,7 @@ wco.prototype.parse = function(content, strict) {
 	
 };
 
+// extract coordinates
 wco.prototype.coord = function(template){
 	var self = this;
 
@@ -39,7 +43,7 @@ wco.prototype.coord = function(template){
 			v=v.split(/:/g).map(function(vv){ return self.trim(vv); });
 			tmpl.kv[v.shift().toLowerCase()] = v.join(":");
 		} else {
-			tmpl.v.push(val);
+			if (val !== "") tmpl.v.push(val);
 		}
 		
 		return tmpl;
@@ -51,16 +55,16 @@ wco.prototype.coord = function(template){
 		case "coord": // enwiki style: https://en.wikipedia.org/wiki/Template:Coord
 
 			// check if template relates to main article
-			if (self.strict && (!coord.kv.display || ["title","inline,title","title,inline","t","ti","it"].indexOf(coord.kv.display.toLowerCase()) < 0)) return debug("<fail> display not title"), null;
+			if (self.strict && (!coord.kv.display || ["title","inline,title","title,inline","t","ti","it"].indexOf(coord.kv.display.toLowerCase()) < 0)) return /* debug("<fail> display not title"), */ null;
 			
-			if (coord.v.length === 2 && /^(\+|\-)?[0-9]+(\.[0-9]+)?$/.test(coord.v[0]) && /^(\+|\-)?[0-9]+(\.[0-9]+)?$/.test(coord.v[1])) { // float format
+			if (coord.v.length === 2 && /^(\+|\-)?[0-9]+(\.[0-9]*)?$/.test(coord.v[0]) && /^(\+|\-)?[0-9]+(\.[0-9]*)?$/.test(coord.v[1])) { // float format
 				
 				return [ parseFloat(coord.v[1]), parseFloat(coord.v[0]) ]
 				
 			} else { // other format
 
-				// empty values are for zero
-				coord.v = coord.v.map(function(v){ return (!!v) ? v : 0; });
+				// filter everything that isn't a coordinate or hemisphere
+				coord.v = coord.v.filter(function(v){ return /^([0-9]+(\.[0-9]*)?|[nsweo])$/i.test(v); });
 				
 				switch (coord.v.length) {
 					case 4:
@@ -76,7 +80,7 @@ wco.prototype.coord = function(template){
 						var ew = coord.v.slice(4,8);
 					break;
 					default:
-						return debug("<fail> unrecognized format: %j", coord.v), null; // not a known format
+						return debug("<fail> [%s] unrecognized format: %j", self.title, coord.v), null; // not a known format
 					break;
 				}
 				
@@ -91,10 +95,10 @@ wco.prototype.coord = function(template){
 		case "coordinate": // dewiki style: https://de.wikipedia.org/wiki/Vorlage:Coordinate
 
 			// check if template relates to main article
-			if (self.strict && coord.kv.article !== '/') return debug("<fail> article not '/': %j", coord.kv), null;
+			if (self.strict && coord.kv.article !== '/') return /*debug("<fail> article not '/': %j", coord.kv), */null;
 			
 			// check if data is complete
-			if (!coord.kv.ew || !coord.kv.ns) return debug("<fail> incomplete: %j", coord.kv), null;
+			if (!coord.kv.ew || !coord.kv.ns) return debug("<fail> [%s] incomplete: %j", self.title, coord.kv), null;
 			
 			return [
 				self.lonlat(coord.kv.ew.split(/\//g)),
@@ -115,7 +119,7 @@ wco.prototype.lonlat = function(l){
 	var m = parseFloat(l.shift()||0);
 	var s = parseFloat(l.shift()||0);
 	
-	if (d < 0 && !!h) debug("<fail> negative degrees and specific hemisphere: %d,%d,%d,%s",d,m,s,h);
+	if (d < 0 && !!h) debug("<fail> [%s] negative degrees and specific hemisphere: %d,%d,%d,%s",self.title,d,m,s,h);
 
 	return this.dms(d,m,s,h)
 
@@ -127,6 +131,9 @@ wco.prototype.templates = function(content){
 
 	// remove comments
 	content = content.replace(/<!--.*?-->/gs,'');
+
+	// remove links
+	content = content.replace(/\[\[[^\]]*\]\]/gs,'');
 
 	// collect template tags
 	var templates = [];
@@ -143,6 +150,9 @@ wco.prototype.templates = function(content){
 	// template
 	templates = templates.map(function(template){
 		
+		// purge bad habit of some people doing `|}}` or `|=}}`
+		template = template.replace(/\|\=?\}\}$/,'}}');
+		
 		template = template.match(/^\{\{([^\|]+)(\|(.*))?\}\}$/s);
 		
 		if (!template) return null;
@@ -150,13 +160,14 @@ wco.prototype.templates = function(content){
 		// normalize name
 		return {
 			name: self.trim(template[1]).toLowerCase(),
-			values: (template[3]||null)
+			values: (template[3]||"")
+
 		}
-		
 	});
-	
+
 	return templates;
-}
+
+};
 
 // convert dms to float
 wco.prototype.dms = function(d,m,s,h) {

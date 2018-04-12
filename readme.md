@@ -4,10 +4,11 @@
 
 ## Usage
 
-### wco(<str> article[, <bool> strict]);
+### wco(<str> article[, <bool> strict[, <str> title]]);
 	
 * `article` – mediawiki markup text
 * `strict` – if true, only coordinates relating to the article itself are returned (`display=title` or `article=/`)
+* `title` – shown in debug output
 
 ## Example
 
