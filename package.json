@@ -1,0 +1,18 @@
+{
+  "name": "wco",
+  "version": "0.0.1",
+  "description": "extract coordinates from mediawiki markup",
+  "main": "wco.js",
+  "keywords": [
+    "mediawiki",
+    "wikitext",
+    "wikipedia",
+    "coordinates",
+	 "geo"
+  ],
+  "author": "yetzt <node@yetzt.me>",
+  "license": "Unlicense",
+  "dependencies": {
+    "debug": "^3.1.0"
+  }
+}
