@@ -175,6 +175,8 @@ wco.prototype.templates = function(content){
 			values: (template[3]||"")
 
 		}
+	}).filter(function(t){
+		return !!t;
 	});
 
 	return templates;
