@@ -73,25 +73,30 @@ wco.prototype.coord = function(template){
 			} else { // other format
 
 				// filter everything that isn't a coordinate or hemisphere
-				coord.v = coord.v.filter(function(v){ return /^([0-9]+(\.[0-9]*)?|[nsweo])$/i.test(v); });
+				coord.v = coord.v.filter(function(v){ return /^([0-9]+(\.[0-9]*)?|[nsweo])$/i.test(v); }).map(function(v){ return v.toLowerCase(); });
 				
-				switch (coord.v.length) {
-					case 4:
-						var ns = coord.v.slice(0,2);
-						var ew = coord.v.slice(2,4);
-					break;
-					case 6:
-						var ns = coord.v.slice(0,3);
-						var ew = coord.v.slice(3,6);
-					break;
-					case 8:
-						var ns = coord.v.slice(0,4);
-						var ew = coord.v.slice(4,8);
-					break;
-					default:
-						return debug("<fail> [%s] unrecognized format: %j", self.title, coord.v), null; // not a known format
-					break;
-				}
+				// collect
+				var ns = null;
+				var ew = null;
+				coord.v.reduce(function(p,c){
+					p.push(c);
+					switch (c) {
+						case "n":
+						case "s":
+							ns = p;
+							p = [];
+						break;
+						case "w":
+						case "e":
+						case "o":
+							ew = p;
+							p = [];
+						break;
+					}
+					return p;
+				},[]);
+				
+				if (!ns || !ew) return debug("<fail> [%s] missing hemisphere: %j", self.title, coord.v), null; // not a known format
 				
 				return [
 					self.lonlat(ew),
