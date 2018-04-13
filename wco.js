@@ -57,6 +57,11 @@ wco.prototype.coord = function(template){
 			// check if template relates to main article
 			if (self.strict && (!coord.kv.display || ["title","inline,title","title,inline","t","ti","it"].indexOf(coord.kv.display.toLowerCase()) < 0)) return /* debug("<fail> display not title"), */ null;
 			
+			// fix bad habit of writing 0.1 as .1
+			coord.v = coord.v.map(function(v){
+				return (/^\.[0-9]+$/.test(v)) ? "0"+v : v;
+			});
+			
 			if (coord.v.length < 2) {
 
 				return null; // no coords in {{coord}}, probably because it's in wikidata
