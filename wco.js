@@ -135,6 +135,9 @@ wco.prototype.templates = function(content){
 	// remove links
 	content = content.replace(/\[\[[^\]]*\]\]/gs,'');
 
+	// remove math markup, because it may confuse the parser
+	content = content.replace(/<math>.*?<\/math>/gs,'');
+
 	// collect template tags
 	var templates = [];
 	var found;
