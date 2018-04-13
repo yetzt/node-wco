@@ -1,6 +1,6 @@
 {
   "name": "wco",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "extract coordinates from mediawiki markup",
   "main": "wco.js",
   "keywords": [

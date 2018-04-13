@@ -59,9 +59,9 @@ wco.prototype.coord = function(template){
 			
 			// fix bad habit of writing 0.1 as .1
 			coord.v = coord.v.map(function(v){
-				return (/^\.[0-9]+$/.test(v)) ? "0"+v : v;
+				return v.replace(/^([\+\-])?\.([0-9]+)$/,'$10.$2');
 			});
-			
+
 			if (coord.v.length < 2) {
 
 				return null; // no coords in {{coord}}, probably because it's in wikidata
